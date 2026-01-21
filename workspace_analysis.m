@@ -3,8 +3,8 @@ clear
 r = 0.013;
 L = 0.278;
 
-lmin = -0.0105;
-lmax = 0.0105;
+lmin = -0.0205;
+lmax = 0.0205;
 
 numPoints = 100; % Define the number of points for the range
 linSpace = linspace(lmin, lmax, numPoints); % Create a linearly spaced vector
