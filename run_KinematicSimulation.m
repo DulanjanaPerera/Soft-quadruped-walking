@@ -15,7 +15,7 @@ close
 clear
 % load("C:\Users\dperera\OneDrive - Texas A&M University\Lab\Research\Quadruped\dynamic modeling\Matlab\gait_trajectory.mat")
 
-stepLen = 0.02;     % step length
+stepLen = 0.015;     % step length
 lift    = 0.01;
 [X, Y, Z] = swingTrajectory(stepLen, lift);
 
