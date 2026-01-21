@@ -1,4 +1,4 @@
-function [l,z] = task2length(p, r, L)
+function [l,z] = task2length_old(p, r, L)
 % Calculate the final position based on theta, phi, and length L
 % 
 % Inputs:
