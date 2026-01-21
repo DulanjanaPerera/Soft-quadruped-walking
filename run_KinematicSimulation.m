@@ -53,29 +53,36 @@ for cycle=1:cycles % how many cycles of gait
 
         for i=1:npoints - 1 % going through trajectory points
 
+            % Coordinate rotation: leg frame -> world frame
+            % Leg X -> World Z, Leg Y -> World X, Leg Z -> World Y
+            R_leg_to_world = [0 1 0 0;   % world X from leg Y
+                              0 0 1 0;   % world Y from leg Z
+                              1 0 0 0;   % world Z from leg X
+                              0 0 0 1];
+
             if legs==1
                 Tbase = global_leg1HTM([0.0;0.0], 0.0, B(:, count), L, r);
-                % transform to initial frame
-                P_d_w = Tbase * P_d;
+                % transform to world frame with coordinate rotation
+                P_d_w = Tbase * R_leg_to_world * P_d;
                 P_d_w = P_d_w(1:3,:);
             elseif legs ==2
                 Tbase = global_leg2HTM([0.0;0.0], 0.0, B(:, count), L, r);
-                % transform to initial frame
-                P_d_w = Tbase * P_d;
+                % transform to world frame with coordinate rotation
+                P_d_w = Tbase * R_leg_to_world * P_d;
                 P_d_w = P_d_w(1:3,:);
             elseif legs==3
                 flipy = eye(4);
                 flipy(2,2) = -1;
                 Tbase = global_leg3HTM([0.0;0.0], 0.0, B(:, count), L, r);
-                % transform to initial frame
-                P_d_w = Tbase * flipy * P_d;
+                % transform to world frame with coordinate rotation and Y flip
+                P_d_w = Tbase * flipy * R_leg_to_world * P_d;
                 P_d_w = P_d_w(1:3,:);
             elseif legs==4
                 flipy = eye(4);
                 flipy(2,2) = -1;
                 Tbase = global_leg4HTM([0.0;0.0], 0.0, B(:, count), L, r);
-                % transform to initial frame
-                P_d_w = Tbase * flipy * P_d;
+                % transform to world frame with coordinate rotation and Y flip
+                P_d_w = Tbase * flipy * R_leg_to_world * P_d;
                 P_d_w = P_d_w(1:3,:);
             end
 
@@ -105,7 +112,7 @@ for cycle=1:cycles % how many cycles of gait
 
 
             dp = P_d_w(:,i+1) - P_d_w(:,i);
-            dp(1) = dp(1) + 0.001;   % add tiny forward bias in world X
+            % dp(1) = dp(1) + 0.001;   % REMOVED: coordinate transformation now handles this properly
 
             % dq = pinv([JC; J]) * ([zeros(k,1); P_d_w(:,i+1)-P_d_w(:,i)] );
             JJ = [JC;J];
