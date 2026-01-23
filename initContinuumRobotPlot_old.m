@@ -1,4 +1,8 @@
 function h = initContinuumRobotPlot(L, rLeg, rBody, varargin)
+% initContinuumRobotPlot
+% Creates the graphics objects ONCE and returns handles/geometry cache.
+%
+% Use with updateContinuumRobotPlot() for fast animation.
 
 p = inputParser;
 p.addParameter('nXi', 50, @(x)isnumeric(x)&&isscalar(x)&&x>=5);
@@ -16,28 +20,26 @@ h.L = L;
 h.rLeg = rLeg;
 h.rBody = rBody;
 
+% --- Figure/axes setup (fixed axes) ---
 figure(1); clf;
 hold on; grid on; axis equal; view(3);
 xlabel('X'); ylabel('Y'); zlabel('Z');
 xlim([-0.4 0.5]); ylim([-0.3 0.3]); zlim([0 0.4]);
 
+% lighting once
 camlight headlight;
 lighting gouraud;
 
-[XC, YC, ZC] = cylinder(1, h.nSides);
+% --- Precompute base cylinder mesh (unit cylinder along +Z) ---
+[XC, YC, ZC] = cylinder(1, h.nSides);   % radius 1
 h.XC = XC; h.YC = YC; h.ZC = ZC;
 
-% Tube segments
+% Number of tube segments:
 h.nSegLeg  = h.nXi - 1;
+h.nSegBody = 1;
 
-% Body is now also segmented
-h.nSegBody = h.nXi - 1;
-
-% Create body segment surfaces (dummy initially)
-h.bodySurf = gobjects(h.nSegBody, 1);
-for k = 1:h.nSegBody
-    h.bodySurf(k) = createTubeSurfDummy(h);
-end
+% Create body surface (dummy initially)
+[h.bodySurf] = createTubeSurfDummy(h);
 
 % Create leg segment surfaces (dummy initially)
 h.legSurf = cell(4,1);
@@ -51,7 +53,7 @@ end
 
 end
 
-
+% -------------------------------------------------------------------------
 function hSurf = createTubeSurfDummy(h)
 % Create a tube segment surface with placeholder data (will be overwritten).
 X = zeros(size(h.XC));

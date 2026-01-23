@@ -1,45 +1,39 @@
 function updateContinuumRobotPlot(h, qLegs, B, b)
-% Updates existing surfaces (fast) for flex body + 4 legs.
+% updateContinuumRobotPlot
+% Updates existing surfaces (fast) for body + 4 legs.
 
+% --- Update body ---
+Tb = globalBodyHTM(B);  % if you do not want bodyHTM, see note below.
+
+switch lower(h.bodyAx)
+    case 'x', dir_b = [1;0;0];
+    case 'y', dir_b = [0;1;0];
+    case 'z', dir_b = [0;0;1];
+    otherwise, error('BodyAxis must be x,y,z.');
+end
+dir_b = h.bodySg * dir_b;
+
+p0_b = [0;0;0];
+p1_b = dir_b * h.L;
+
+p0_g = Tb(1:3,1:3)*p0_b + Tb(1:3,4);
+p1_g = Tb(1:3,1:3)*p1_b + Tb(1:3,4);
+
+setTubeSegment(h, h.bodySurf, p0_g, p1_g, h.rBody);
+
+% --- Update legs ---
 xiVec = linspace(0,1,h.nXi);
-
-%% --- Update FLEX BODY (sample along xi_b in [0,1]) ---
-Pb = zeros(h.nXi, 3); % body backbone points in WORLD
-
-for k = 1:h.nXi
-    xi_b = xiVec(k);
-
-    % Your body HTM (global frame) at xi_b
-    % Signature you gave: global_bodyHTM(B, b, xi_b, L, r)
-    Tb = global_bodyHTM(B, b, xi_b, h.L, h.rLeg);   % r=0 for backbone centerline
-
-    Pb(k,:) = Tb(1:3,4).';
-end
-
-% Update each body tube segment
-for k = 1:h.nSegBody
-    p0 = Pb(k,:).';
-    p1 = Pb(k+1,:).';
-    setTubeSegment(h, h.bodySurf(k), p0, p1, h.rBody);
-end
-
-%% --- Update LEGS ---
 legFns = {@global_leg1HTM, @global_leg2HTM, @global_leg3HTM, @global_leg4HTM};
-
-% Legs 2 and 4 attached to body tip; legs 1 and 3 to body base (as you indicated)
-xi_b_attach = [0.0; 1.0; 0.0; 1.0];
+xi_b = [0.0;1.0;0.0;1.0]; % the leg 2 and leg 4 is attached to the tip of the body. So, xi_b=1 at the body tip
 
 for iLeg = 1:4
     qi = qLegs{iLeg};
 
-    % Sample leg backbone points in WORLD
-    P = zeros(h.nXi, 3);
-
+    % Sample backbone points in WORLD
+    P = zeros(h.nXi,3);
     for k = 1:h.nXi
         xi = xiVec(k);
-
-        % Your existing leg call (kept as-is)
-        T = legFns{iLeg}(qi, xi, B, [1e-6; 1e-6], xi_b_attach(iLeg), h.L, h.rLeg);
+        T  = legFns{iLeg}(qi, xi, B, [0.000001;0.000001], xi_b(iLeg), h.L, h.rLeg);
         P(k,:) = T(1:3,4).';
     end
 
@@ -55,6 +49,7 @@ end
 drawnow limitrate nocallbacks;
 end
 
+% -------------------------------------------------------------------------
 function setTubeSegment(h, hSurf, p0, p1, rTube)
 % Update a tube segment surface from p0 to p1 with radius rTube.
 

@@ -33,6 +33,8 @@ H = X(1); % the leg's X is worldframe Z. So the standing position.
 pX = zeros(1,npoints*4*cycles);
 B = zeros(6,npoints*4*cycles);
 B(:,1) = [0;0;H; 0;0;0];  % [x y z roll pitch yaw] or your convention
+b = [0.01; 0.01];
+
 
 [l,~] = task2length([H; 0], r, L);
 [l2,~] = task2length([X(1); Y(1)], r, L);
@@ -55,26 +57,26 @@ for cycle=1:cycles % how many cycles of gait
         for i=1:npoints - 1 % going through trajectory points
 
             if legs==1
-                Tbase = global_leg1HTM([0.0;0.0], 0.0, B(:, count), L, r);
+                Tbase = global_leg1HTM([0.000001;0.000001], 0.0, B(:, count), b, 0.0, L, r);
                 % transform to initial frame
                 P_d_w = Tbase * P_d;
                 P_d_w = P_d_w(1:3,:);
             elseif legs ==2
-                Tbase = global_leg2HTM([0.0;0.0], 0.0, B(:, count), L, r);
+                Tbase = global_leg2HTM([0.000001;0.000001], 0.0, B(:, count), b, 1.0, L, r);
                 % transform to initial frame
                 P_d_w = Tbase * P_d;
                 P_d_w = P_d_w(1:3,:);
             elseif legs==3
                 flipy = eye(4);
                 flipy(2,2) = -1;
-                Tbase = global_leg3HTM([0.0;0.0], 0.0, B(:, count), L, r);
+                Tbase = global_leg3HTM([0.000001;0.000001], 0.0, B(:, count), b, 0.0, L, r);
                 % transform to initial frame
                 P_d_w = Tbase * flipy * P_d;
                 P_d_w = P_d_w(1:3,:);
             elseif legs==4
                 flipy = eye(4);
                 flipy(2,2) = -1;
-                Tbase = global_leg4HTM([0.0;0.0], 0.0, B(:, count), L, r);
+                Tbase = global_leg4HTM([0.000001;0.000001], 0.0, B(:, count), b, 1.0, L, r);
                 % transform to initial frame
                 P_d_w = Tbase * flipy * P_d;
                 P_d_w = P_d_w(1:3,:);
@@ -82,10 +84,10 @@ for cycle=1:cycles % how many cycles of gait
             
             wf_x(:,count) = P_d_w(:,i);
 
-            jc1 = Jacobian_leg1(qr(1:2, count), 1, B(:, count), L, r);
-            jc2 = Jacobian_leg2(qr(3:4, count), 1, B(:, count), L, r);
-            jc3 = Jacobian_leg3(qr(5:6, count), 1, B(:, count), L, r);
-            jc4 = Jacobian_leg4(qr(7:8, count), 1, B(:, count), L, r);
+            jc1 = Jacobian_leg1(qr(1:2, count), 1, B(:, count), b, 0.0, L, r);
+            jc2 = Jacobian_leg2(qr(3:4, count), 1, B(:, count), b, 1.0, L, r);
+            jc3 = Jacobian_leg3(qr(5:6, count), 1, B(:, count), b, 0.0, L, r);
+            jc4 = Jacobian_leg4(qr(7:8, count), 1, B(:, count), b, 1.0, L, r);
 
             % JJ = [jc1; jc2; jc3; jc4];
             % p_des = zeros(12,1);
@@ -107,7 +109,7 @@ for cycle=1:cycles % how many cycles of gait
             end
 
 
-            dp = P_d_w(:,i+1) - P_d_w(:,i) + [0.001;0;0];
+            dp = P_d_w(:,i+1) - P_d_w(:,i) + [0.0001;0;0];
             % dp(1) = dp(1) + 0.001;   % add tiny forward bias in world X
 
             % dq = pinv([JC; J]) * ([zeros(k,1); P_d_w(:,i+1)-P_d_w(:,i)] );
@@ -152,5 +154,5 @@ legend 'X' 'Y' 'Z'
 
 
 
-animateQuadrupedFast(qr, B, L, r, rBody)
+animateQuadrupedFast(qr, B, b, L, r, rBody)
 % animateQuadrupedFastToVideo(qr, B, L, r, rBody, "walking_v4");

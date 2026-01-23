@@ -1,4 +1,4 @@
-function animateQuadrupedFast(qr, B, L, rLeg, rBody)
+function animateQuadrupedFast(qr, B, b, L, rLeg, rBody)
 % animateQuadrupedFast
 % Fast animation by updating vertices (no re-creating surfaces).
 
@@ -22,7 +22,7 @@ for k = 1:N
     q3 = qr(5:6,k);
     q4 = qr(7:8,k);
 
-    updateContinuumRobotPlot(h, {q1,q2,q3,q4}, B(:,k));
+    updateContinuumRobotPlot(h, {q1,q2,q3,q4}, B(:,k), b);
     title(sprintf('Step %d / %d', k, N));
 
     % Throttle
