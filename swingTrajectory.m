@@ -16,7 +16,7 @@ s = 3*tau.^2 - 2*tau.^3;
 
 % Planar swing in your task frame (check which axis is "up" for task2length)
 X = x0;                              % keep constant (example)
-Y = y0 - stepLen*s;                  % forward progression
+Y = y0-stepLen*s;                  % forward progression
 U = lift * sin(pi*s);                % "lift" component in the plane
 
 % If your task2length expects [X;Y], decide where U goes:
