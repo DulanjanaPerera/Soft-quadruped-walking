@@ -39,7 +39,8 @@ for iLeg = 1:4
         xi = xiVec(k);
 
         % Your existing leg call (kept as-is)
-        T = legFns{iLeg}(qi, xi, B, [1e-6; 1e-6], xi_b_attach(iLeg), h.L, h.rLeg);
+        % when xi=1, it is the tip of the leg
+        T = legFns{iLeg}(qi, xi, B, b, xi_b_attach(iLeg), h.L, h.rLeg);
         P(k,:) = T(1:3,4).';
     end
 

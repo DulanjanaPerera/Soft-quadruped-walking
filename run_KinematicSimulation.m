@@ -33,18 +33,12 @@ H = X(1); % the leg's X is worldframe Z. So the standing position.
 pX = zeros(1,npoints*4*cycles);
 B = zeros(6,npoints*4*cycles);
 B(:,1) = [0;0;H; 0;0;0];  % [x y z roll pitch yaw] or your convention
-b = [0.01; 0.01];
+b = [0.001; 0.001];
 
 
 [l,~] = task2length([H; 0], r, L);
 [l2,~] = task2length([X(1); Y(1)], r, L);
 
-% initial q_legs
-% leg 2 is going to swing
-% q1 = [l(2); l(3)];
-% q2 = [l2(2); l2(3)];
-% q3 = [l(2); l(3)];
-% q4 = [l(2); l(3)];
 
 qr = zeros(8, npoints*4*cycles);
 wf_x = zeros(3,npoints*4*cycles);
@@ -109,7 +103,7 @@ for cycle=1:cycles % how many cycles of gait
             end
 
 
-            dp = P_d_w(:,i+1) - P_d_w(:,i) + [0.0001;0;0];
+            dp = P_d_w(:,i+1) - P_d_w(:,i) + [0.0008;0;0];
             % dp(1) = dp(1) + 0.001;   % add tiny forward bias in world X
 
             % dq = pinv([JC; J]) * ([zeros(k,1); P_d_w(:,i+1)-P_d_w(:,i)] );
@@ -137,7 +131,7 @@ end
 vec = 1:1:count;
 
 figure(2)
-plot((1:1:count),B(1,1:count), (1:1:count),B(2,1:count), (1:1:count),B(3,1:count));
+plot(vec,B(1,1:count), vec,B(2,1:count), vec,B(3,1:count));
 grid on
 axis tight
 xlabel 'iterations'

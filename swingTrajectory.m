@@ -26,7 +26,6 @@ X = x0 - U;
 % Convert to internal variables and compute Z (as your function returns)
 numPoints = numel(s);
 Z = zeros(1,numPoints);
-ell = zeros(1,numPoints);
 
 for i = 1:numPoints
     [~, Z(i)] = task2length([X(i); Y(i)], r, L);

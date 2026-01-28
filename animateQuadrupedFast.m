@@ -24,7 +24,9 @@ for k = 1:N
 
     updateContinuumRobotPlot(h, {q1,q2,q3,q4}, B(:,k), b);
     title(sprintf('Step %d / %d', k, N));
-
+    
+    drawnow limitrate
+    
     % Throttle
     elapsed = toc(tLast);
     if elapsed < dtPlot
