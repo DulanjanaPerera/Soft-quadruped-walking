@@ -17,7 +17,9 @@ h.rLeg = rLeg;
 h.rBody = rBody;
 
 figure(1); clf;
-hold on; grid on; axis equal; view(3);
+hold on; grid on; axis equal;
+view([1,90]); 
+rotate3d 'on' ;
 xlabel('X'); ylabel('Y'); zlabel('Z');
 xlim([-0.4 0.5]); ylim([-0.3 0.3]); zlim([0 0.4]);
 
