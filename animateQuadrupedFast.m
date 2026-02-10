@@ -1,17 +1,18 @@
 function animateQuadrupedFast(qr, B, b, L, rLeg, rBody)
-% animateQuadrupedFast
-% Fast animation by updating vertices (no re-creating surfaces).
 
 N = size(qr,2);
 if size(B,2) ~= N
     error('qr and B must have same number of columns (time steps).');
 end
 
-% Init plot objects once (fixed axes set here)
 h = initContinuumRobotPlot(L, rLeg, rBody, ...
     'nXi', 20, 'nSides', 16, 'BodyAxis', 'x', 'BodySign', -1);
 
-% Playback speed control
+% Contact detection + CoG settings
+h.contactZThresh = 0.005;     % meters (tune: 1e-3 .. 1e-2)
+h.useRelativeGround = true;   % more robust than absolute z=0
+h.groundPad = 0.002;          % extra margin above estimated ground
+
 fps = 30;
 dtPlot = 1/fps;
 tLast = tic;
@@ -22,12 +23,18 @@ for k = 1:N
     q3 = qr(5:6,k);
     q4 = qr(7:8,k);
 
-    updateContinuumRobotPlot(h, {q1,q2,q3,q4}, B(:,k), b);
+    if size(b,2) == N
+        bk = b(:,k);
+    else
+        bk = b;
+    end
+
+    updateContinuumRobotPlot(h, {q1,q2,q3,q4}, B(:,k), bk, qr(:,k));
+
     title(sprintf('Step %d / %d', k, N));
-    
-    drawnow limitrate
-    
-    % Throttle
+
+    drawnow limitrate  % keep callbacks ON so rotate3d works
+
     elapsed = toc(tLast);
     if elapsed < dtPlot
         pause(dtPlot - elapsed);

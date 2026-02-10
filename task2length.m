@@ -8,17 +8,18 @@ function [l, z] = task2length(p, r, L)
     rho = sqrt(p(1)^2 + p(2)^2); % radial distance
     
     % Better initial guess based on small-angle approximation
-    if rho < 1e-6
-        phi_init = 1e-3;
-    else
-        phi_init = min(pi, max(1e-3, 2*rho/L)); % better initial guess
-    end
+    % if rho < 1e-6
+    %     phi_init = 1e-3;
+    % else
+    %     phi_init = min(pi, max(1e-3, 2*rho/L)); % better initial guess
+    % end
+    phi_init = 0.01;
     
     % Objective function (minimize distance to target)
     fun = @(phi) costFunction(phi, theta, L, p);
     
     % Constraints
-    lb = 1e-4;  % avoid singularity at phi=0
+    lb = 1e-6;  % avoid singularity at phi=0
     ub = pi;
     
     % Nonlinear constraint: ensure reachable workspace
@@ -27,13 +28,17 @@ function [l, z] = task2length(p, r, L)
     % fmincon options
     options = optimoptions('fmincon', ...
         'Display', 'off', ...
-        'Algorithm', 'interior-point', ...
+        'Algorithm', 'sqp', ...
         'MaxIterations', 200, ...
-        'TolFun', 1e-8, ...
-        'TolX', 1e-8);
+        'OptimalityTolerance', 1e-10, ...
+        'StepTolerance', 1e-10);
+    % options = optimoptions('fmincon', ...
+    %     'Display', 'off', ...
+    %     'Algorithm', 'interior-point', ...
+    %     'MaxIterations', 200);
     
     % Solve
-    [phi, ~, exitflag] = fmincon(fun, phi_init, [], [], [], [], lb, ub, nonlcon, options);
+    [phi, ~, exitflag] = fmincon(fun, phi_init, [], [], [], [], lb, ub, [], options);
     
     % Check if solution is valid
     if exitflag < 1

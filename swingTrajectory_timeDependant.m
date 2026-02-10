@@ -1,16 +1,17 @@
-function [X, Y, Z] = swingTrajectory(stepLen, lift)
-r = 0.013;
-L = 0.278;
-
-% stepLen = 0.02;     % step length
-% lift    = 0.01;     % positive lift magnitude (check sign convention!)
+function  gait = swingTrajectory_timeDependant(stepLen, lift, r, L, T, t)
+% r = 0.013;
+% L = 0.278;
+k = (mod(t,T) == 0);
+notZero = (t ~= 0);
+tau = t./T - floor(t./T) + k .* notZero;
+HTM = ones(size(t));
 
 x0 = 0.19;
 y0 = stepLen/2;
 % y0 = 0.0;
 
 % time-normalized parameter
-tau = 0:0.01:1;
+% tau = 0:0.01:1;
 
 % smooth time scaling: s(tau)
 s = 3*tau.^2 - 2*tau.^3;
@@ -31,6 +32,8 @@ Z = zeros(1,numPoints);
 for i = 1:numPoints
     [~, Z(i)] = task2length([X(i); Y(i)], r, L);
 end
+
+gait = [X; Y; Z; HTM];
 
 % figure; plot(tau, X, tau, Y, tau, Z); grid on; legend('X','Y', 'Z'); xlabel('\tau');
 % 
