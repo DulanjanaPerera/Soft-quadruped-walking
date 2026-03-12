@@ -6,13 +6,14 @@ Bsen = u(2:7);
 qr_len = u(8:15);
 contact = u(16);
 
+
 % -------------------- Persistents --------------------
 persistent L r k T dt ...
            count legseq legs ...
            b straight_pose dp_cog ...
            isInitialized isTouched ...
            npoints stepLen_l stepLen_r lift ...
-           qr_initial
+           qr_initial qr_next qr_dot
 
 % -------------------- Initialization (single latch) --------------------
 if isempty(isInitialized)
@@ -21,8 +22,10 @@ if isempty(isInitialized)
     L  = 0.3175;
     r  = 0.013;
     k  = 9;
-    T  = 1.0;
+    T  = 4.0;
     dt = 0.001;
+    qr_dot = zeros([8,1]);
+    qr_next = zeros([8,1]);
 
     count  = 1;
     legseq = int32([2, 1, 4, 3]);   % int helps codegen indexing clarity
@@ -148,7 +151,10 @@ if isTouched
 
     % Update qr (only first 8 variables from the 14-delta)
     delta14 = (W*JJ) \ (W*rhs);          % 14x1
+    qr_next = qr_len(:,1) + delta14(1:8);
+    qr_dot = qr_next - qr_len(:,1);
     qr_len(:,1) = qr_len(:,1) + delta14(1:8);    % 8x1
+    Bsen(:, 1) = Bsen(:, 1) - ( JC(:,9:end) \ ( JC(:, 1:8) * (qr_dot)));
 
     % Step the gait sequence
     count = count + 1;
@@ -171,6 +177,6 @@ else
     qr_len(:,1) = qr_initial; % keep qr consistent
 end
 
-y = [FL; BL; FR; BR; qr_len];
+y = [FL; BL; FR; BR; qr_len; Bsen];
 
 end

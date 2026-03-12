@@ -13,47 +13,44 @@
 
 close
 clear
-% simulink parameters
-sf = 0.8;
-df = 0.7;
-
 % load("C:\Users\dperera\OneDrive - Texas A&M University\Lab\Research\Quadruped\dynamic modeling\Matlab\gait_trajectory.mat")
 
 % robots parameters and the motion parameters
-L = 0.317475;   % length of the module
+L = 0.278;   % length of the module
 r  = 0.013;   % radial offset of the 
 rBody = 0.012;   % size of the body module
-cycles = 5;  % number gait cycles
+cycles = 2;  % number gait cycles
 k = 9; % constraint legs
-T = 0.5; % swing time
-dt = 0.01; % descretization
-npoints = round(T/dt);
-tvec = 0:dt:2*T;
 
-stepLen_l = 0.04; % step length
+stepLen_l = 0.04;     % step length
 lift    = 0.01;
-gait_l = swingTrajectory_timeDependant_simulink(stepLen_l, lift, r, L, T, [0.0, 0.0]); % initial foot position
+[X_l, Y_l, Z_l] = swingTrajectory(stepLen_l, lift); % left side trajectory
+stance_wf_l = [0.0008;0;0]; % world frame stance
 
-
-stepLen_r = 0.04; % step length
+stepLen_r = 0.04;     % step length
 lift    = 0.01;
-gait_r = swingTrajectory_timeDependant_simulink(stepLen_r, lift, r, L, T, [0.0, 0.0]); % initial foot position
+[X_r, Y_r, Z_r] = swingTrajectory(stepLen_r, lift); % left side trajectory
+stance_wf_r = [0.0008;0;0]; % world frame stance
 
+dp_cog = [0.0001;-0.00000;0.00000];
 
-dp_cog = [0.0002;-0.00000;0.00000];
-
+stance = [0;0;-0.0008; 1]; % leg frame stance
 b = -2e-8*ones(2,1); % body bending
 straight_pose = 1e-8*ones(2,1); % length changes for straigt pose
 
+npoints = length(X_l);
+P_d_l = [X_l; Y_l; Z_l; ones(1,npoints)]; % left side trajectory
+P_d_r = [X_r; Y_r; Z_r; ones(1,npoints)]; % right side trajectory
 
-H = gait_l(1,1); % the leg's X is worldframe Z. So the standing position.
+
+H = X_l(1); % the leg's X is worldframe Z. So the standing position.
 B = zeros(6,npoints*4*cycles); % body frame trajectory
 B(:,1) = [0;0;H; 0;0;0];  % [x y z roll pitch yaw] or your convention
 COG = zeros(3,npoints*4*cycles);
 
 
 [l,~] = task2length([H; 0], r, L);
-[l2,~] = task2length([gait_l(1,1); gait_l(2,1)], r, L);
+[l2,~] = task2length([X_l(1); Y_l(1)], r, L);
 
 
 qr = zeros(8, npoints*4*cycles);
@@ -73,37 +70,47 @@ for cycle=1:cycles % how many cycles of gait
     for legs=[2,1,4,3] % leg sequence
 
         for i=1:npoints-1 % going through trajectory points
-            % if i == 100
-            %     disp(i);
-            % end
+
             if legs==1
-                P_d_l = swingTrajectory_timeDependant_simulink(stepLen_l, lift, r, L, T, [tvec(i),tvec(i+1)] );
                 Tbase = global_leg1HTM(straight_pose, 0.0, B(:, count), b, 0.0, L, r);
                 P_d_w = Tbase * P_d_l;
+                stance_w = Tbase * stance;
+
+                stance_w = stance_w(1:3,1);
                 P_d_w = P_d_w(1:3,:);
             elseif legs ==2
-                P_d_l = swingTrajectory_timeDependant_simulink(stepLen_l, lift, r, L, T, [tvec(i),tvec(i+1)] );
                 Tbase = global_leg2HTM(straight_pose, 0.0, B(:, count), b, 1.0, L, r);
                 P_d_w = Tbase * P_d_l;
+                stance_w = Tbase * stance;
+
+                stance_w = stance_w(1:3,1);
                 P_d_w = P_d_w(1:3,:);
             elseif legs==3
                 flipy = eye(4);
                 flipy(2,2) = -1;
-                P_d_r = swingTrajectory_timeDependant_simulink(stepLen_r, lift, r, L, T, [tvec(i),tvec(i+1)] );
                 Tbase = global_leg3HTM(straight_pose, 0.0, B(:, count), b, 0.0, L, r);
                 P_d_w = Tbase * flipy * P_d_r;
+                stance_w = Tbase * flipy * stance;
+
+                stance_w = stance_w(1:3,1);
                 P_d_w = P_d_w(1:3,:);
             elseif legs==4
                 flipy = eye(4);
                 flipy(2,2) = -1;
-                P_d_r = swingTrajectory_timeDependant_simulink(stepLen_r, lift, r, L, T, [tvec(i),tvec(i+1)] );
                 Tbase = global_leg4HTM(straight_pose, 0.0, B(:, count), b, 1.0, L, r);
                 P_d_w = Tbase * flipy * P_d_r;
+                stance_w = Tbase * flipy * stance;
+
+                stance_w = stance_w(1:3,1);
                 P_d_w = P_d_w(1:3,:);
             end
+            % compute the configuration variables for the qr
+            leg1_config(:, count) = length2config(qr(1:2, count), r);
+            leg2_config(:, count) = length2config(qr(3:4, count), r);
+            leg3_config(:, count) = length2config(qr(5:6, count), r);
+            leg4_config(:, count) = length2config(qr(7:8, count), r);
 
-
-            wf_x(:,count) = P_d_w(:,1);
+            wf_x(:,count) = P_d_w(:,i);
 
             jc1 = Jacobian_leg1(qr(1:2, count), 1, B(:, count), b, 0.0, L, r);
             jc2 = Jacobian_leg2(qr(3:4, count), 1, B(:, count), b, 1.0, L, r);
@@ -126,7 +133,7 @@ for cycle=1:cycles % how many cycles of gait
             end
             Jcog = Jacobian_cog(qr(1:8), 1, B(:, count), b, 1.0, L, r);
 
-            dp = P_d_w(:,2) - P_d_w(:,1);
+            dp = P_d_w(:,i+1) - P_d_w(:,i);
 
             JJ = [JC;J;Jcog];
             W = diag([1000*ones(k, 1);100*ones(3,1); 10*ones(3,1)]);
@@ -136,11 +143,6 @@ for cycle=1:cycles % how many cycles of gait
 
 
             count = count + 1;
-            % compute the configuration variables for the qr
-            leg1_config(:, count) = length2config(qr(1:2, count), r);
-            leg2_config(:, count) = length2config(qr(3:4, count), r);
-            leg3_config(:, count) = length2config(qr(5:6, count), r);
-            leg4_config(:, count) = length2config(qr(7:8, count), r);
         end
     end
 end
@@ -179,5 +181,29 @@ leg4_config(:, count-1) = 0.5 * (leg4_config(:, 1) + leg4_config(:, count-1));
 
 body_config = length2config(b, r);
 
+% leg1_theta = [leg1_config(1,:)', t];
+% leg1_phi = [leg1_config(2,:)', t];
+% 
+% leg2_theta = [leg2_config(1,:)', t];
+% leg2_phi = [leg2_config(2,:)', t];
+% 
+% leg3_theta = [leg3_config(1,:)', t];
+% leg3_phi = [leg3_config(2,:)', t];
+% 
+% leg4_theta = [leg4_config(1,:)', t];
+% leg4_phi = [leg4_config(2,:)', t];
+
+% leg1_theta = timeseries(leg1_config(1,:), t);
+% leg1_phi = timeseries(leg1_config(2,:), t);
+% 
+% leg2_theta = timeseries(leg2_config(1,:), t);
+% leg2_phi = timeseries(leg2_config(2,:), t);
+% 
+% leg3_theta = timeseries(leg3_config(1,:), t);
+% leg3_phi = timeseries(leg3_config(2,:), t);
+% 
+% leg4_theta = timeseries(leg4_config(1,:), t);
+% leg4_phi = timeseries(leg4_config(2,:), t);
+
 animateQuadrupedFast(qr, B, b, L, r, rBody)
-% animateQuadrupedFastToVideo(qr, B, b, L, r, rBody, "walking_v7");
+% animateQuadrupedFastToVideo(qr, B, b, L, r, rBody, "walking_v5");

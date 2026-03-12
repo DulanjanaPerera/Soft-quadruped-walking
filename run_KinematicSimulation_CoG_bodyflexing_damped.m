@@ -14,15 +14,15 @@
 close
 clear
 % load("C:\Users\dperera\OneDrive - Texas A&M University\Lab\Research\Quadruped\dynamic modeling\Matlab\gait_trajectory.mat")
-static_coeff = 5;
-dynamic_coeff = 2;
+sf = 0.8;
+df = 0.7;
 
 
 % robots parameters and the motion parameters
 L = 0.317475;   % length of the module
 r  = 0.013;   % radial offset of the 
 rBody = 0.012;   % size of the body module
-cycles = 2;  % number gait cycles
+cycles = 10;  % number gait cycles
 k = 3*4; % constraint legs
 T = 0.5; % flexing time
 dt = 0.01; % descretization
@@ -34,7 +34,7 @@ std_task = config2task(0.0, pi/2, L);
 std_len = config2length(0.0, pi/2, r);
 
 % flexing body trajectory
-[p, l] = bodyFlexingTrajectory(T, dt, L, r);
+[p, l] = bodyFlexingTrajectory(pi/20, T, dt, L, r);
 % p = zeros()
 
 b = l(2:3,1); % body bending
@@ -42,13 +42,13 @@ straight_pose = 1e-8*ones(2,1); % length changes for straigt pose
 
 
 H = std_task(1,1); % the leg's X is worldframe Z. So the standing position.
-B = zeros(6,npoints*4*cycles); % body frame trajectory
+B = zeros(6,npoints*cycles); % body frame trajectory
 B(:,1) = [0;0;H; 0;0;0];  % [x y z roll pitch yaw]
-COG = zeros(3,npoints*4*cycles);
+COG = zeros(3,npoints*cycles);
 
-qr = zeros(10, npoints*4*cycles); % [10x1]
+qr = zeros(10, npoints*cycles); % [10x1]
 qr(:,1) = [std_len(2); std_len(3); std_len(2); std_len(3); std_len(2); std_len(3); std_len(2); std_len(3); b(1); b(2)]; % [10x1]
-wf_x = zeros(3, npoints*4*cycles);
+wf_x = zeros(3, npoints*cycles);
 
 % configuration parameters
 leg1_config = zeros(2,size(qr,2));
@@ -82,25 +82,36 @@ for cycle=1:cycles % how many cycles of gait
             % d_bp = bp(:,2) - bp(:,1);
             % W = diag([1000*ones(k, 1);100*ones(3,1)]);
             % Damped minimal norm solution for Null space (Tikhonov regularization)
-            lambda = 1e-6;
+            lambda = 5e-2;
+            alpha = 1e-1;
+
             JC = [jc1; jc2; jc3; jc4];      % 12x16
             JC_hash = JC' / (JC*JC' + lambda^2*eye(size(JC,1)));
             N = eye(16) - JC_hash*JC;
 
             v_des = (bp(:,2) - bp(:,1))/dt;  % 3x1
-            % jcb = Jacobian_body_flex(...);   % 3x16
-            jcb_hash = jcb' / (jcb*jcb' + lambda^2*eye(3));
-            qdot0 = jcb_hash * v_des;        % 16x1
-            qdot = N * qdot0;                % enforce feet constraints
+            A = jcb * N;                                % 3x16
+
+            % Penalize base motion strongly (indices 11:16 correspond to B)
+            Wb = zeros(16,16);
+            Wb(11:13,11:13) = diag([1e1, 1e1, 1e1]);              % penalize base translation
+            Wb(14:16,14:16) = 1e1*eye(3);              % penalize base rotation
+            
+            Bmat = Wb * N;
+            
+            % Damped normal equation for z
+            H = (A'*A) + alpha*(Bmat'*Bmat) + (1e-9)*eye(16);
+            z = H \ (A' * v_des);
+            qdot = N * z;
             
             resC = norm(JC*qdot)
             v_ach = jcb*qdot
             errV = norm(v_des - v_ach)
-            q_next = [qr(:,count); B(:,count)] + qdot/10;
+            q_next = [qr(:,count); B(:,count)] + qdot*dt;
             qr(:, count+1) = q_next(1:10);
-            B(:,count+1)  = q_next(11:16); 
+            % B(:,count+1)  = q_next(11:16); 
             % qr(:, count+1) = qr(:, count) + [eye(10), zeros(10,6)] * ( pinv(W*JJ) * (W*[zeros(k,1); d_bp]) ); % [10x1]
-            % B(:, count+1) = B(:, count) - ( pinv(JC(:,11:end)) * ( JC(:, 1:10) * (qr(1:10, count+1) - qr(1:10, count)) ) );
+            B(:, count+1) = B(:, count) - ( JC_hash(11:end,:) * ( JC(:, 1:10) * (qr(1:10, count+1) - qr(1:10, count)) ) );
 
 
             
@@ -112,6 +123,9 @@ for cycle=1:cycles % how many cycles of gait
             body_config(:, count) = length2config(qr(9:10, count), r);
 
             count = count + 1;
+            % if count >= 90
+            %     disp(count);
+            % end
         end
 end
 
@@ -134,26 +148,26 @@ ylabel 'Cartesian'
 legend 'X' 'Y' 'Z'
 
 
-t = linspace(0,10,count-1)';
-leg1_config = leg1_config(:, 1:count-1);
-leg1_config(:, count-1) = 0.5 * (leg1_config(:, 1) + leg1_config(:, count-1));
+t = linspace(0,20,count-2)';
+leg1_config = leg1_config(:, 1:count-2);
+% leg1_config(:, count-2) = 0.5 * (leg1_config(:, 1) + leg1_config(:, count-2));
 
-leg2_config = leg2_config(:, 1:count-1);
-leg2_config(:, count-1) = 0.5 * (leg2_config(:, 1) + leg2_config(:, count-1));
+leg2_config = leg2_config(:, 1:count-2);
+% leg2_config(:, count-2) = 0.5 * (leg2_config(:, 1) + leg2_config(:, count-2));
 
-leg3_config = leg3_config(:, 1:count-1);
-leg3_config(:, count-1) = 0.5 * (leg3_config(:, 1) + leg3_config(:, count-1));
+leg3_config = leg3_config(:, 1:count-2);
+% leg3_config(:, count-2) = 0.5 * (leg3_config(:, 1) + leg3_config(:, count-2));
 
-leg4_config = leg4_config(:, 1:count-1);
-leg4_config(:, count-1) = 0.5 * (leg4_config(:, 1) + leg4_config(:, count-1));
+leg4_config = leg4_config(:, 1:count-2);
+% leg4_config(:, count-2) = 0.5 * (leg4_config(:, 1) + leg4_config(:, count-2));
 
-body_config = body_config(:, 1:count-1);
-body_config(:, count-1) = 0.5 * (body_config(:, 1) + body_config(:, count-1));
+body_config = abs(body_config(:, 1:count-2));
+% body_config(:, count-2) = 0.5 * (body_config(:, 1) + body_config(:, count-2));
 
 [row, column] = size(qr);
 if row>8
     b = qr(9:10,:);
     qr = qr(1:8, :);
 end
-animateQuadrupedFast(qr, B, b, L, r, rBody);
+animateQuadrupedFast(qr(:,1:end-2), B(:,1:end-2), b(:,1:end-2), L, r, rBody);
 % animateQuadrupedFastToVideo(qr, B, b, L, r, rBody, "walking_v5");

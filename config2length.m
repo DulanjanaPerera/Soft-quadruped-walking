@@ -1,5 +1,6 @@
 function l = config2length(theta, phi, r)
-% THis function computes the length changes forgiven theta and phi.
+% This function computes the Cartesian coordinate w.r.t. the base of the arm
+% for given theta and phi.
 % 
 % Inputs:
 %   theta   : Bending direction [constant or vector] (rad)
@@ -9,15 +10,21 @@ function l = config2length(theta, phi, r)
 % Output:
 %   l       : length changes [3x1] (m)
 
-l = zeros(3, 1);
+theta = theta(:).'; 
+phi   = phi(:).'; 
+
+len = length(theta);
+l = 1e-6 .* ones(3, len);
+
+phi(abs(phi)<=1e-5) = 0.001;
+
 if phi <= 1e-5    
     return ;
 else
     % Compute length changes for non-negligible phi
-    l = zeros(3, 1);
-    l(1) = -r * cos(theta) * phi;
-    l(2) = (0.5 * r * cos(theta) - sqrt(3) * r * sin(theta) / 2) * phi;
-    l(3) = (0.5 * r * cos(theta) + sqrt(3) * r * sin(theta) / 2) * phi;
+    l(1, :) = -r * cos(theta) .* phi;
+    l(2, :) = (0.5 * r * cos(theta) - sqrt(3) * r * sin(theta) / 2) .* phi;
+    l(3, :) = (0.5 * r * cos(theta) + sqrt(3) * r * sin(theta) / 2) .* phi;
 
 end
 

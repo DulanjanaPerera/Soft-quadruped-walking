@@ -10,7 +10,7 @@ Z   = zeros(1,2);
 HTM = ones(1,2);
 
 % Parameters
-x0 = 0.19;
+x0 = 0.202;
 y0 = stepLen/2;
 
 % Compute for each of the two time instants
