@@ -22,7 +22,7 @@ if isempty(isInitialized)
     L  = 0.3175;
     r  = 0.013;
     k  = 9;
-    T  = 4.0;
+    T  = 1.0;
     dt = 0.001;
     qr_dot = zeros([8,1]);
     qr_next = zeros([8,1]);
@@ -74,6 +74,7 @@ FL = zeros(2,1);
 BL = zeros(2,1);
 FR = zeros(2,1);
 BR = zeros(2,1);
+Bdy = zeros(2,1);
 
 % -------------------- Main logic --------------------
 if isTouched
@@ -167,6 +168,7 @@ if isTouched
     BL = length2config(qr_len(3:4,1), r);
     FR = length2config(qr_len(5:6,1), r);
     BR = length2config(qr_len(7:8,1), r);
+    Bdy = length2config(b, r);
 
 else
     % Not touched yet: hold initial pose
@@ -174,9 +176,10 @@ else
     BL = length2config(qr_initial(3:4,1), r);
     FR = length2config(qr_initial(5:6,1), r);
     BR = length2config(qr_initial(7:8,1), r);
+    Bdy = length2config(b, r);
     qr_len(:,1) = qr_initial; % keep qr consistent
 end
 
-y = [FL; BL; FR; BR; qr_len; Bsen];
+y = [FL; BL; FR; BR; Bdy; qr_len; Bsen];
 
 end

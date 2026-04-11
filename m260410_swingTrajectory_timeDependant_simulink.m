@@ -1,4 +1,4 @@
-function gait = swingTrajectory_timeDependant_simulink(stepLen, lift, r, L, T, t)
+function gait = m260410_swingTrajectory_timeDependant_simulink(stepLen, lift, r, L, T, t)
 %#codegen
 % ASSUMPTION: t is always 1x2.
 % OUTPUT: gait is always 4x2: [X; Y; Z; HTM] at the two times.

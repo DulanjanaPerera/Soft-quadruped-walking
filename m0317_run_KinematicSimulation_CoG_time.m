@@ -24,23 +24,23 @@ L = 0.317475;   % length of the module
 r  = 0.013;   % radial offset of the 
 rBody = 0.012;   % size of the body module
 cycles = 5;  % number gait cycles
-k = 9; % constraint legs
-T = 0.5; % swing time
+k = 9; % constraint legs variables
+T = 1; % swing time
 dt = 0.01; % descretization
 npoints = round(T/dt);
-tvec = 0:dt:2*T;
+tvec = 0:dt:T;
 
-stepLen_l = 0.04; % step length
+stepLen_l = 0.02; % step length
 lift    = 0.01;
 gait_l = swingTrajectory_timeDependant_simulink(stepLen_l, lift, r, L, T, [0.0, 0.0]); % initial foot position
 
 
-stepLen_r = 0.04; % step length
+stepLen_r = 0.02; % step length
 lift    = 0.01;
 gait_r = swingTrajectory_timeDependant_simulink(stepLen_r, lift, r, L, T, [0.0, 0.0]); % initial foot position
 
 
-dp_cog = [0.0002;-0.00000;0.00000];
+dp_cog = [0.02/(4*npoints);0.00000;0.00000];
 
 b = -2e-8*ones(2,1); % body bending
 straight_pose = 1e-8*ones(2,1); % length changes for straigt pose
@@ -130,10 +130,17 @@ for cycle=1:cycles % how many cycles of gait
             dp = P_d_w(:,2) - P_d_w(:,1);
 
             JJ = [JC;J;Jcog];
-            W = diag([1000*ones(k, 1);100*ones(3,1); 10*ones(3,1)]);
+            W = diag([10*ones(k, 1);1000*ones(3,1); [0.01; 0.01; 0.01]]);
 
             qr(:, count+1) = qr(:, count) + [eye(8), zeros(8,6)] * ( (W*JJ) \ (W * [zeros(k,1); dp; dp_cog]) );
             B(:, count+1) = B(:, count) - ( JC(:,9:end) \ ( JC(:, 1:8) * (qr(:, count+1) - qr(:, count)) ) );
+
+            % % without CoG control
+            % JJ = [JC;J];
+            % W = diag([1000*ones(k, 1);100*ones(3,1)]);
+            % 
+            % qr(:, count+1) = qr(:, count) + [eye(8), zeros(8,6)] * ( (W*JJ) \ (W * [zeros(k,1); dp]) );
+            % B(:, count+1) = B(:, count) - ( JC(:,9:end) \ ( JC(:, 1:8) * (qr(:, count+1) - qr(:, count)) ) );
 
 
             count = count + 1;
@@ -166,20 +173,22 @@ ylabel 'Cartesian'
 legend 'X' 'Y' 'Z'
 
 
-t = linspace(0,10,count-1)';
-leg1_config = leg1_config(:, 1:count-1);
-leg1_config(:, count-1) = 0.5 * (leg1_config(:, 1) + leg1_config(:, count-1));
+end_idx = count;
 
-leg2_config = leg2_config(:, 1:count-1);
-leg2_config(:, count-1) = 0.5 * (leg2_config(:, 1) + leg2_config(:, count-1));
+t = linspace(0,T*4*cycles,end_idx)';
+leg1_config = leg1_config(:, 1:end_idx);
+leg1_config(:, end_idx) = 0.5 * (leg1_config(:, 1) + leg1_config(:, end_idx));
 
-leg3_config = leg3_config(:, 1:count-1);
-leg3_config(:, count-1) = 0.5 * (leg3_config(:, 1) + leg3_config(:, count-1));
+leg2_config = leg2_config(:, 1:end_idx);
+leg2_config(:, end_idx) = 0.5 * (leg2_config(:, 1) + leg2_config(:, end_idx));
 
-leg4_config = leg4_config(:, 1:count-1);
-leg4_config(:, count-1) = 0.5 * (leg4_config(:, 1) + leg4_config(:, count-1));
+leg3_config = leg3_config(:, 1:end_idx);
+leg3_config(:, end_idx) = 0.5 * (leg3_config(:, 1) + leg3_config(:, end_idx));
 
-body_config = body_config(:, 1:count-1);
+leg4_config = leg4_config(:, 1:end_idx);
+leg4_config(:, end_idx) = 0.5 * (leg4_config(:, 1) + leg4_config(:, end_idx));
 
-animateQuadrupedFast(qr, B, b, L, r, rBody)
+body_config = body_config(:, 1:end_idx);
+
+animateQuadrupedFast(qr(:, 1:end_idx), B(:, 1:end_idx), b, L, r, rBody)
 % animateQuadrupedFastToVideo(qr, B, b, L, r, rBody, "walking_v7");
