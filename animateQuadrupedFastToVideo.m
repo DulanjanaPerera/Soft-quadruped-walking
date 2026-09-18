@@ -1,4 +1,4 @@
-function animateQuadrupedFastToVideo(qr, B, b, L, rLeg, rBody, outFile)
+function animateQuadrupedFastToVideo(qr, B, b, L, rLeg, rBody, dt, outFile)
 
 N = size(qr,2);
 if size(B,2) ~= N
@@ -14,13 +14,15 @@ h = initContinuumRobotPlot(L, rLeg, rBody, ...
     'nXi', 50, 'nSides', 32, 'BodyAxis', 'x', 'BodySign', -1);
 
 % Contact detection + CoG settings
-h.contactZThresh = 0.005;     % meters (tune: 1e-3 .. 1e-2)
+h.contactZThresh = 0.01;     % meters (tune: 1e-3 .. 1e-2)
 h.useRelativeGround = true;   % more robust than absolute z=0
 h.groundPad = 0.002;          % extra margin above estimated ground
 
 fps = 30;
 dtPlot = 1/fps;
 tLast = tic;
+
+time_vid = 0;
 
 for k = 1:N
     q1 = qr(1:2,k);
@@ -35,7 +37,9 @@ for k = 1:N
     end
 
     updateContinuumRobotPlot(h, {q1,q2,q3,q4}, B(:,k), bk, qr(:,k));
-    title(sprintf('Step %d / %d', k, N));
+    % title(sprintf('Step %d / %d', k, N));
+    title(sprintf('Time %0.2f s', time_vid));
+    time_vid = time_vid + dt;    
 
     frame = getframe(gcf);
     writeVideo(v, frame);

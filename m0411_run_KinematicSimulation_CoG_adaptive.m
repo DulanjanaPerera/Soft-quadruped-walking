@@ -13,6 +13,8 @@
 
 close
 clear
+% debugging parameters
+leg_traj = zeros(3,1);
 % simulink parameters
 sf = 0.8;
 df = 0.7;
@@ -98,8 +100,10 @@ for cycle=1:cycles % how many cycles of gait
                     % initialize the trajectory
                     traj = swingTrajectory_initializer_simulink(1, stepLen_l, Tfoot(1:2,4), tvec(i));
                     P_d_l = swingTrajectory_evaluator_simulink(r, L, T, [tvec(i),tvec(i+1)], traj);
+                    leg_traj(:,i)=P_d_l(1:3,1);
                 else
                     P_d_l = swingTrajectory_evaluator_simulink(r, L, T, [tvec(i),tvec(i+1)], traj);
+                    leg_traj(:,i)=P_d_l(1:3,1);
                 end
                 % P_d_l = swingTrajectory_timeDependant_simulink(stepLen_l, lift, r, L, T, [tvec(i),tvec(i+1)] );
                 Tbase = global_leg2HTM(straight_pose, 0.0, B(:, count), b, 1.0, L, r);

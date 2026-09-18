@@ -101,7 +101,6 @@ for i = 1:2
             Xi = x_b + [-R * sin(theta_mu);
                          side * R * cos(theta_mu)];
         end
-
     elseif mode == 2 
         % is foot is near the circle (close  to 1% of the radius)
         Xi = x_b + [-R * sin(pi*s);

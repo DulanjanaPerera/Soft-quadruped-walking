@@ -25,8 +25,8 @@ r  = 0.013;   % radial offset of the
 rBody = 0.012;   % size of the body module
 cycles = 5;  % number gait cycles
 k = 9; % constraint legs variables
-T = 1; % swing time
-dt = 0.01; % descretization
+T = 0.5; % swing time
+dt = 0.05; % descretization
 npoints = round(T/dt);
 tvec = 0:dt:T;
 

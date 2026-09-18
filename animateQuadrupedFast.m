@@ -1,4 +1,15 @@
 function animateQuadrupedFast(qr, B, b, L, rLeg, rBody)
+% This function extract joint lengths, and body lenghts and other
+% parameters to draw the robot
+% 
+% Inputs:
+%   qr  : length changes trajectories of each limbs [8xk]. k is the number time
+%         instances in the trajectory
+%   B   : body frame trajectory [6xk]. [X, Y, Z, roll pitch yaw]
+%   b   : body length change [2xk]
+%   L   : length of the limb and the body
+%   rLeg: limb radius
+%   rBody: body radius
 
 N = size(qr,2);
 if size(B,2) ~= N
@@ -8,7 +19,7 @@ end
 h = initContinuumRobotPlot(L, rLeg, rBody, ...
     'nXi', 20, 'nSides', 16, 'BodyAxis', 'x', 'BodySign', -1);
 
-% Contact detection + CoG settings
+% Contact detection + CoG settings. This is to draw the support triangle
 h.contactZThresh = 0.005;     % meters (tune: 1e-3 .. 1e-2)
 h.useRelativeGround = true;   % more robust than absolute z=0
 h.groundPad = 0.002;          % extra margin above estimated ground

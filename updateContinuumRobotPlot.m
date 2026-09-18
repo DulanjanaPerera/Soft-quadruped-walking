@@ -3,7 +3,7 @@ function updateContinuumRobotPlot(h, qLegs, B, b, lAll)
 
 xiVec = linspace(0,1,h.nXi);
 
-%% --- Update FLEX BODY ---
+% --- Update FLEX BODY ---
 Pb = zeros(h.nXi, 3);
 for k = 1:h.nXi
     xi_b = xiVec(k);
@@ -14,7 +14,7 @@ for k = 1:h.nSegBody
     setTubeSegment(h, h.bodySurf(k), Pb(k,:).', Pb(k+1,:).', h.rBody);
 end
 
-%% --- Update LEGS (and also collect tip positions) ---
+% --- Update LEGS (and also collect tip positions) ---
 legFns = {@global_leg1HTM, @global_leg2HTM, @global_leg3HTM, @global_leg4HTM};
 xi_b_attach = [0.0; 1.0; 0.0; 1.0];
 
@@ -42,7 +42,7 @@ end
 % Plot all foot tips
 set(h.footDotsAll, 'XData', pFeet(1,:), 'YData', pFeet(2,:), 'ZData', pFeet(3,:));
 
-%% --- Contact detection ---
+% --- Contact detection ---
 if h.useRelativeGround
     zGround = min(pFeet(3,:));   % estimate ground at lowest foot
     zThresh = zGround + h.groundPad;
@@ -56,7 +56,7 @@ idx = find(inContact);
 % Plot only contacting feet
 set(h.footDotsContact, 'XData', pFeet(1,idx), 'YData', pFeet(2,idx), 'ZData', pFeet(3,idx));
 
-%% --- Support polygon on XY plane ---
+% --- Support polygon on XY plane ---
 if numel(idx) >= 3
     XY = pFeet(1:2, idx).';  % Nx2
 
@@ -77,7 +77,7 @@ else
     set(h.supportEdge,  'XData', nan, 'YData', nan, 'ZData', nan);
 end
 
-%% --- CoG in 3D + projection ---
+% --- CoG in 3D + projection ---
 % Your function returns HTM at CoG (4x4). Use translation.
 Tcog = global_COG(lAll, 0, B, b, 1, h.L, h.rLeg);  % xi_b not needed for CoG; set 0
 pCoG = Tcog(1:3,4);
